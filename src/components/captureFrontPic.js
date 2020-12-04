@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react"
+import React, { useRef, useState } from "react"
 import { connect } from 'react-redux'
 import styled from 'styled-components'
 import { blobToBase64 } from 'base64-blob'
@@ -44,7 +44,6 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const [captureBtn, setCaptureBtn] = useState('hidden')
   const [prompt, setPrompt] = useState('')
   const videoRef = useRef();
-  const streamRef = useRef();
 
 
   const [model, setModel] = useState(null);
@@ -56,15 +55,21 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
  
 
 const predict = () => {
+  console.log(videoRef.current.srcObject)
+  console.log("predict start")
   predictLoop.current = setInterval(async () => {
     try {
+
+      console.log("predict try loading model")
+      console.log(videoRef.current)
+      console.log(segmentPersonConfig)
+      
       
       const segmentation = await model.segmentPersonParts(
         videoRef.current,
         segmentPersonConfig
       );
-      console.log(segmentation); // This is the prediction
-      return;
+      console.log(segmentation)
       // console.log("predict try after load")
 
       const coloredPartImage = bodyPix.toColoredPartMask(segmentation);
@@ -118,6 +123,7 @@ const predict = () => {
     setModel(loadedModel);
     
     console.log("BodyPix Model Loaded..");
+    console.log("Prediction Beginning");
 
   };
 
@@ -125,9 +131,12 @@ const predict = () => {
 
   const startPrediction = () => {
     setPredicting(true);
+    console.log(videoRef.current.srcObject)
+    console.log(videoRef)
+    console.log(videoRef.current.srcObject)
 
-    console.log("Starting Prediction..")
     predict();
+    console.log("prediction?")
 
 
   };
@@ -203,9 +212,11 @@ const predict = () => {
       console.log(stream)
       videoRef.current.srcObject = stream
       videoRef.current.play()
-      streamRef.current = stream;
+      console.log(videoRef.current.srcObject)
 
       setUpdating(false);
+      loadModel();
+      console.log(`Model Loaded?: ${model}`);
 
       startPrediction()
       // setCameraPermission(true);
@@ -215,6 +226,7 @@ const predict = () => {
       console.log("Access DENIED in background for bodypix");
  
     })
+    loadModel();
 
   }
  
@@ -258,20 +270,6 @@ const predict = () => {
   }
 
   const displaySpeaker = () => { if (user.voice) return <AudioPlayer /> }
-
-  useEffect(() => {
-    loadModel();
-    
-    // Set Video element's height and width equal to the Webcam's stream dimensions
-    videoRef.current.height =typeof window !== 'undefined' ? window.innerHeight * window.devicePixelRatio : 1280;
-    videoRef.current.width = typeof window !== 'undefined' ? window.innerWidth * window.devicePixelRatio : 720;
-
-    return ()=>{
-      // Clean up
-      clearInterval(predictLoop.current);
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-  }, [])
 
   return (
     <div className="pt-4">
