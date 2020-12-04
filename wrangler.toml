@@ -1,0 +1,29 @@
+name = "esatta-app"
+type = "webpack"
+account_id = "14033e5125651d95fb1181e88d208a85"
+workers_dev = true
+kv_namespaces = [
+  { binding = "container", id = "a3e7c4d86dbe47bfa5c6bc617d315808", preview_id = "51525e6f000940ddab6bef5e14ccf1f5" }
+]
+
+[site]
+bucket = "./public"
+entry-point = "workers-site"
+
+[env.dev]
+bucket = "./public"
+entry-point = "workers-site"
+zone_id = "12059f198ff256cc89c513496f398627"
+route = "dev-esatta.octo.digital/*"
+
+[env.production]
+bucket = "./public"
+entry-point = "workers-site"
+zone_id = "12059f198ff256cc89c513496f398627"
+route = "prod-esatta.octo.digital/*"
+
+[dev]
+ip = "0.0.0.0"
+port=9000
+local_protocol="https"
+upstream_protocol="https"
