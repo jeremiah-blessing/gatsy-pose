@@ -241,7 +241,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
         video: {
           width: window.innerWidth,
           height: window.innerHeight,
-          facingMode: "user",
+          facingMode: user.cameraFace === "user" ? "user" : "",
         },
       })
       .then(stream => {
@@ -369,8 +369,8 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
           playsInline
         />
       </div>
-      <div className="px-4 fixed bottom-0 left-0 w-full bg-red-400 text-white">
-        {/* {prompt === "hidden" ? (
+      <div className="px-4 fixed h-40 bottom-0 left-0 w-full text-white">
+        {prompt === "hidden" ? (
           <FadingText
             cameraFace={user.cameraFace}
             takePic={takePic}
@@ -378,7 +378,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
           />
         ) : (
           <div />
-        )} */}
+        )}
       </div>
       <div className="absolute right-3% w-1/12 top-33%">
         <div className="relative h-33vh border-gray-500 border-2 rounded-lg">
