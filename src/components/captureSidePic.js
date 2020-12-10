@@ -34,6 +34,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const videoRef = useRef()
   const streamRef = useRef()
   const canvasRef = useRef()
+  const drawingCanvasRef = useRef()
 
   // Temperory stat
   const sPartRef = useRef()
@@ -44,16 +45,35 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const predict = () => {
     predictLoop.current = setInterval(async () => {
       try {
-        const segmentation = await model.segmentPersonParts(
-          videoRef.current,
-          segmentPersonConfig
-        )
+        drawingCanvasRef.current
+          .getContext("2d")
+          .drawImage(
+            videoRef.current,
+            0,
+            0,
+            window.innerHeight,
+            window.innerWidth
+          )
+        var resultb64 = drawingCanvasRef.current.toDataURL()
 
-        if (segmentation.allPoses.length === 0) return
         let successColor = "rgb(16, 185, 129)",
           failureColor = "rgb(239, 68, 68)"
 
-        let visible = allPartsVisible(segmentation) // This is the prediction
+        let visible = (
+          await (
+            await fetch("http://localhost:4000/analyze-side-pic", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                image: resultb64,
+                imageHeight: window.innerHeight,
+                imageWidth: window.innerWidth,
+              }),
+            })
+          ).json()
+        ).result
 
         if (visible) sPartRef.current.style.backgroundColor = successColor
         else sPartRef.current.style.backgroundColor = failureColor
@@ -255,6 +275,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
       {displaySpeaker()}
       <div className="relative">
         <canvas ref={canvasRef} className="absolute top-0 left-0"></canvas>
+        <canvas ref={drawingCanvasRef} className="hidden"></canvas>
         {/* {user.cameraFace === 'user' ?
   
         <Video

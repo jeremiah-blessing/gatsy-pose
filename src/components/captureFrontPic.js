@@ -43,6 +43,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const videoRef = useRef()
   const streamRef = useRef()
   const canvasRef = useRef()
+  const drawingCanvasRef = useRef()
   const trackRef = useRef()
 
   // Temperory stat
@@ -60,14 +61,35 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const predict = () => {
     predictLoop.current = setInterval(async () => {
       try {
-        const segmentation = await model.segmentPersonParts(
-          videoRef.current,
-          segmentPersonConfig
-        )
+        drawingCanvasRef.current
+          .getContext("2d")
+          .drawImage(
+            videoRef.current,
+            0,
+            0,
+            window.innerHeight,
+            window.innerWidth
+          )
+        var resultb64 = drawingCanvasRef.current.toDataURL()
 
-        if (segmentation.allPoses.length === 0) return
+        const results = (
+          await (
+            await fetch("http://localhost:4000/analyze-front-pic", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                image: resultb64,
+                imageHeight: window.innerHeight,
+                imageWidth: window.innerWidth,
+              }),
+            })
+          ).json()
+        ).result
 
-        let results = analysePrediction(segmentation) // This is the prediction
+        if (results === null) return
+
         let successColor = "rgb(16, 185, 129)",
           failureColor = "rgb(239, 68, 68)"
         if (!results.ifAllPartsAreVisible) {
@@ -89,44 +111,17 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
             ? successColor
             : failureColor
         }
-        // console.log(results.rightLegAngle, results.leftLegAngle)
 
-        // console.log(leftLegAngle)
+        // var ctx = canvasRef.current.getContext("2d")
+        // ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
-        var ctx = canvasRef.current.getContext("2d")
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-        // console.log(ctx)
+        // let keyPoints = segmentation.allPoses[0].keypoints
 
-        let keyPoints = segmentation.allPoses[0].keypoints
-
-        keyPoints.forEach(el => {
-          ctx.fillStyle = "#DF2935"
-          ctx.fillRect(el.position.x, el.position.y, 10, 10)
-        })
-
-        const coloredPartImage = bodyPix.toColoredPartMask(segmentation)
-        const opacity = 0.7
-        const flipHorizontal = false
-        const maskBlurAmount = 0
-        // console.log(coloredPartImage)
-
-        // Draw the colored part image on top of the original image onto a canvas.
-        // The colored part image will be drawn semi-transparent, with an opacity of
-        // 0.7, allowing for the original image to be visible under.
-        // bodyPix.drawMask(
-        //   canvasRef.current,
-        //   videoRef.current,
-        //   coloredPartImage,
-        //   opacity,
-        //   maskBlurAmount,
-        //   flipHorizontal
-        // )
+        // keyPoints.forEach(el => {
+        //   ctx.fillStyle = "#DF2935"
+        //   ctx.fillRect(el.position.x, el.position.y, 10, 10)
+        // })
         return
-        segmentation.allPoses.forEach(pose => {
-          if (flipHorizontal) {
-            pose = bodyPix.flipPoseHorizontal(pose, segmentation.width)
-          }
-        })
       } catch (error) {
         console.log(error)
       }
@@ -332,6 +327,10 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
     canvasRef.current.height = window.innerHeight
     canvasRef.current.width = window.innerWidth
 
+    // Set Drawing Canvas element's height and width equal to the Webcam's stream dimensions
+    drawingCanvasRef.current.height = window.innerHeight
+    drawingCanvasRef.current.width = window.innerWidth
+
     return () => {
       // Clean up
       clearInterval(predictLoop.current)
@@ -344,6 +343,7 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
       {displaySpeaker()}
       <div className="relative">
         <canvas ref={canvasRef} className="absolute top-0 left-0"></canvas>
+        <canvas ref={drawingCanvasRef} className="hidden"></canvas>
         {/* {user.cameraFace === 'user' ?
   
         <Video
