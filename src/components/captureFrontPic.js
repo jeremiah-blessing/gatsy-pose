@@ -17,9 +17,12 @@ import CloseIconSvg from "../images/x-svg.svg"
 // require("@tensorflow/tfjs-backend-webgl");
 //The below module needed to run body-pix in component.
 import * as tf from "@tensorflow/tfjs"
-//body-pix to do segmentation, then based on pixel location, run a check.
-import * as bodyPix from "@tensorflow-models/body-pix"
-import { canBeRepresented } from "@tensorflow/tfjs-backend-webgl/dist/webgl_util"
+import * as posenet from "@tensorflow-models/posenet"
+import { setWasmPaths } from "@tensorflow/tfjs-backend-wasm"
+
+// //body-pix to do segmentation, then based on pixel location, run a check.
+// import * as bodyPix from "@tensorflow-models/body-pix"
+// import { canBeRepresented } from "@tensorflow/tfjs-backend-webgl/dist/webgl_util"
 
 // ONLY ADD THIS WHEN USING FRONT FACE CAM
 const Video = styled.video`
@@ -43,7 +46,6 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const videoRef = useRef()
   const streamRef = useRef()
   const canvasRef = useRef()
-  const drawingCanvasRef = useRef()
   const trackRef = useRef()
 
   // Temperory stat
@@ -61,35 +63,12 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   const predict = () => {
     predictLoop.current = setInterval(async () => {
       try {
-        drawingCanvasRef.current
-          .getContext("2d")
-          .drawImage(
-            videoRef.current,
-            0,
-            0,
-            window.innerHeight,
-            window.innerWidth
-          )
-        var resultb64 = drawingCanvasRef.current.toDataURL()
+        console.log(tf.getBackend())
+        let pose = await model.estimateSinglePose(videoRef.current, {
+          flipHorizontal: false,
+        })
 
-        const results = (
-          await (
-            await fetch("http://localhost:4000/analyze-front-pic", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                image: resultb64,
-                imageHeight: window.innerHeight,
-                imageWidth: window.innerWidth,
-              }),
-            })
-          ).json()
-        ).result
-
-        if (results === null) return
-
+        let results = analysePrediction(pose.keypoints) // This is the prediction
         let successColor = "rgb(16, 185, 129)",
           failureColor = "rgb(239, 68, 68)"
         if (!results.ifAllPartsAreVisible) {
@@ -112,15 +91,17 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
             : failureColor
         }
 
-        // var ctx = canvasRef.current.getContext("2d")
-        // ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+        var ctx = canvasRef.current.getContext("2d")
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+        // console.log(ctx)
 
-        // let keyPoints = segmentation.allPoses[0].keypoints
+        let keyPoints = pose.keypoints
 
-        // keyPoints.forEach(el => {
-        //   ctx.fillStyle = "#DF2935"
-        //   ctx.fillRect(el.position.x, el.position.y, 10, 10)
-        // })
+        keyPoints.forEach(el => {
+          ctx.fillStyle = "#DF2935"
+          ctx.fillRect(el.position.x, el.position.y, 10, 10)
+        })
+
         return
       } catch (error) {
         console.log(error)
@@ -139,15 +120,16 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
   // }
 
   const loadModel = async () => {
-    let loadedModel = await bodyPix.load({
+    setWasmPaths("/")
+    await tf.setBackend("wasm")
+    let loadedModel = await posenet.load({
       architecture: "MobileNetV1",
       outputStride: 16,
       multiplier: 0.75,
-      quantBytes: 2,
     })
-    setModel(loadedModel)
 
-    console.log("BodyPix Model Loaded..")
+    setModel(loadedModel)
+    console.log("Posenet Model Loaded..")
   }
 
   const startPrediction = () => {
@@ -327,10 +309,6 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
     canvasRef.current.height = window.innerHeight
     canvasRef.current.width = window.innerWidth
 
-    // Set Drawing Canvas element's height and width equal to the Webcam's stream dimensions
-    drawingCanvasRef.current.height = window.innerHeight
-    drawingCanvasRef.current.width = window.innerWidth
-
     return () => {
       // Clean up
       clearInterval(predictLoop.current)
@@ -342,31 +320,15 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
     <div className="">
       {displaySpeaker()}
       <div className="relative">
-        <canvas ref={canvasRef} className="absolute top-0 left-0"></canvas>
-        <canvas ref={drawingCanvasRef} className="hidden"></canvas>
-        {/* {user.cameraFace === 'user' ?
-  
-        <Video
-        className="h-70vh w-full mb-2"
-        ref={videoRef}
-        autoPlay
-        playsInline
-        /> 
-        
-        :
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 border-2 border-green-600"
+        ></canvas>
         <video
-        className="h-70vh w-full mb-2"
-        ref={videoRef}
-        autoPlay
-        playsInline
-        />
-      } */}
-        <video
-          // className="h-70vh w-full mb-2"
-          className=""
+          className="border-2 border-red-600"
           ref={videoRef}
           autoPlay
-          playsInline
+          // playsInline
         />
       </div>
       <div className="px-4 fixed h-40 bottom-0 left-0 w-full text-white">
@@ -460,9 +422,8 @@ const mapDispatchToProps = dispatch => ({
 
 export default connect(mapStateToProps, mapDispatchToProps)(CapturePic)
 
-function analysePrediction(predictions) {
+function analysePrediction(keyPoints) {
   let nScore = 0.7 // Needed Score
-  let keyPoints = predictions.allPoses[0].keypoints
 
   let leftShoulder = keyPoints[5]
   let rightShoulder = keyPoints[6]
