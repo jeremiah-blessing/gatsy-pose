@@ -7,7 +7,6 @@ import { configureStore } from "../store"
 // import "../css/tailwind.css"
 // import "../css/tailwind.css"
 
-
 import SignIn from "../components/dynamic/signIn.js"
 import SignUp from "../components/dynamic/signUp"
 import ForgotPassword from "../components/dynamic/forgotPassword"
@@ -28,11 +27,13 @@ import BrowseBrands from "../components/dynamic/browseBrands"
 import Maintenance from "../components/maintenance"
 import FourZeroFour from "../components/dynamic/404"
 import NoConnection from "../components/dynamic/noConnection"
-import MaintenanceImg from '../images/red-maintenance-esatta.svg'
-
+import MaintenanceImg from "../images/red-maintenance-esatta.svg"
 
 import CaptureFrontPic from "../components/captureFrontPic"
 import CaptureSidePic from "../components/captureSidePic"
+
+import CaptureFrontPicc from "../components/captureFrontPicc"
+import CaptureSidePicc from "../components/captureSidePicc"
 
 const store = configureStore()
 const persistor = persistStore(store)
@@ -40,31 +41,32 @@ const persistor = persistStore(store)
 const HomePage = () => {
   function MobileAndTabletCheck() {
     if (typeof window !== "undefined") {
-      if (typeof window.orientation !== 'undefined'){
-        console.log("true");
+      if (typeof window.orientation !== "undefined") {
+        console.log("true")
         return true
-      }
-      else
-      {
-        console.log("false");
+      } else {
+        console.log("false")
         return false
       }
-    }
-    else{
+    } else {
       return true
     }
-  };
+  }
   return (
     <div>
       <div id="popup">
-        <div className={`${MobileAndTabletCheck() ? 'block' : 'hidden'}`}>
-          <img alt="hair" className="w-1/3 px-4 my-4 md:my-20 lg:my-20 mx-auto retinaImageLarge" src={MaintenanceImg} />
+        <div className={`${MobileAndTabletCheck() ? "block" : "hidden"}`}>
+          <img
+            alt="hair"
+            className="w-1/3 px-4 my-4 md:my-20 lg:my-20 mx-auto retinaImageLarge"
+            src={MaintenanceImg}
+          />
           <h1 className="mx-8 text-center text-xl font-Georgia font-bold">
             Sorry, this app is only designed to be used in portrait mode
           </h1>
         </div>
-        <div className={`${MobileAndTabletCheck() ? 'hidden' : 'block'}`}>
-        <h1 className="mx-8 text-center text-xl font-Georgia font-bold">
+        <div className={`${MobileAndTabletCheck() ? "hidden" : "block"}`}>
+          <h1 className="mx-8 text-center text-xl font-Georgia font-bold">
             Please scan the QR code below to be redirected to the mobile app
           </h1>
         </div>
@@ -98,8 +100,10 @@ const HomePage = () => {
 
               <CaptureFrontPic path="/home/capture-front-pic" />
               <CaptureSidePic path="/home/capture-side-pic" />
-              <Processing path="/home/processing" />
 
+              <CaptureFrontPicc path="/home/capture-front-picc" />
+              <CaptureSidePicc path="/home/capture-side-picc" />
+              <Processing path="/home/processing" />
             </Router>
           </PersistGate>
         </Provider>
