@@ -84,12 +84,12 @@ const CapturePic = ({ navigate, user, onCapturePressed }) => {
         var ctx = canvasRef.current.getContext("2d")
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
-        let keyPoints = segmentation.allPoses[0].keypoints
+        // let keyPoints = segmentation.allPoses[0].keypoints
 
-        keyPoints.forEach(el => {
-          ctx.fillStyle = "#DF2935"
-          ctx.fillRect(el.position.x, el.position.y, 10, 10)
-        })
+        // keyPoints.forEach(el => {
+        //   ctx.fillStyle = "#DF2935"
+        //   ctx.fillRect(el.position.x, el.position.y, 10, 10)
+        // })
 
         return
       } catch (error) {
