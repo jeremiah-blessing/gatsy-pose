@@ -78,6 +78,7 @@ export default function CaptureFrontPicc() {
     setTimeout(() => {
       setResultModal(true)
       setPrediction("completed")
+      // SAVE IMAGE FROM THE VIDEO ELEMENT
     }, 3000)
     // alert("Captured")
   }
